@@ -75,7 +75,28 @@ def get_book_summary(book_url):
     Make sure to strip() any newlines from the book title and number of pages.
     """
 
-    pass
+    r = requests.get(book_url)
+    soup = BeautifulSoup(r.text, 'html.parser')
+
+    pages = soup.find('span', {'itemprop':'numberOfPages'}).text
+    pages = pages.split(' ')[0].strip()
+    
+    title = soup.find('h1', {'class':'gr-h1 gr-h1--serif'}) #finds the title
+    title = title.text.strip() 
+    
+    all_names = ''
+    authors = soup.find_all('a', {'class':'authorName'}) #gets all the authors
+    for auth in authors:
+        name = auth.find('span', {'itemprop':'name'}) #gets the span compotent of each author which has the name
+        name = name.text.strip()
+        all_names = all_names + ', ' + name 
+    
+    #TODO MULTIPLE AUTHORS IN SOME EXAMPLES
+    tupl = (title, all_names[2:], int(pages))
+    print(tupl)
+    return tupl
+
+    
 
 
 def summarize_best_books(filepath):
@@ -89,7 +110,26 @@ def summarize_best_books(filepath):
     ("Fiction", "The Testaments (The Handmaid's Tale, #2)", "https://www.goodreads.com/choiceawards/best-fiction-books-2020") 
     to your list of tuples.
     """
-    pass
+    summary = []
+    with open(filepath, 'r') as f:
+        contents = f.read()
+        soup = BeautifulSoup(contents, 'lxml')
+
+        books = soup.find_all('div', {'class':'category clearFix'})
+        for b in books: 
+            cat = b.find('h4', {'class':'category__copy'}).text.strip()
+            title = b.find('img', {'class':'category__winnerImage'})
+            title = title['alt'].strip()
+            url = b.find('a', href=True)
+            url = url['href'].strip()
+            tup = (cat, title, url)
+            
+            summary.append(tup)
+    
+    print(summary)
+    print(len(summary))
+    f.close()
+    return summary
 
 
 def write_csv(data, filename):
@@ -112,7 +152,11 @@ def write_csv(data, filename):
 
     This function should not return anything.
     """
-    pass
+    with open(filename, "wt") as fp:
+        writer = csv.writer(fp, delimiter=",")
+        writer.writerow(["Book title", "Author name"])
+        writer.writerows(data)
+    fp.close()
 
 
 def extra_credit(filepath):
